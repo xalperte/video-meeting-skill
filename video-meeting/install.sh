@@ -17,6 +17,7 @@
 #   install.sh --no-ollama      # skip Ollama service + model pulls
 #   install.sh --models-only    # just (re)download model weights
 #   install.sh --check          # run preflight only; change nothing
+#   install.sh --migrate-config # add new config.yaml keys from the example (non-destructive)
 #   install.sh --install-cuda   # also attempt NVIDIA driver/CUDA (OFF by default)
 #   install.sh --uninstall [--purge]   # remove venvs+models (+global registry)
 # =============================================================================
@@ -56,6 +57,7 @@ for arg in "$@"; do
     --user-space)   MODE="user-space" ;;
     --models-only)  MODE="models-only" ;;
     --check)        MODE="check" ;;
+    --migrate-config) MODE="migrate-config" ;;
     --uninstall)    MODE="uninstall" ;;
     --install-cuda) INSTALL_CUDA=1 ;;
     --purge)        PURGE=1 ;;
@@ -73,8 +75,9 @@ case "$MODE" in
   # GPU driver, and Ollama service are already installed. Safe to delegate.
   user-space)  DO_PYENV=1; DO_PYDEPS=1; DO_MODELS=1; DO_OLLAMA=1; DO_PREFLIGHT=1; PULL_ONLY=1 ;;
   models-only) DO_MODELS=1 ;;
-  check)       DO_PREFLIGHT=1 ;;
-  uninstall)   : ;;  # handled separately below
+  check)         DO_PREFLIGHT=1 ;;
+  migrate-config) : ;;   # handled separately in main()
+  uninstall)     : ;;  # handled separately below
 esac
 
 # ----------------------------------------------------------------------------
@@ -284,6 +287,19 @@ phase_ollama() {
     ollama pull "$m"
   done < <(cfg install.ollama_models)
   ok "models pulled"
+
+  # Vision model for the optional --frames step. Pulled even if the user's
+  # install.ollama_models list predates this key (uses the configured value
+  # or the built-in default).
+  local vmodel
+  vmodel="$(cfg ollama.vision_model 2>/dev/null || true)"
+  [[ -n "$vmodel" ]] || vmodel="qwen2.5vl:7b"
+  if ! ollama list 2>/dev/null | grep -q "^${vmodel%%:*}"; then
+    log "pulling vision model $vmodel (for --frames)"
+    ollama pull "$vmodel" || warn "could not pull $vmodel; --frames will be unavailable"
+  else
+    ok "vision model present: $vmodel"
+  fi
 }
 
 # ----------------------------------------------------------------------------
@@ -324,6 +340,13 @@ do_uninstall() {
 # ----------------------------------------------------------------------------
 main() {
   if [[ "$MODE" == "uninstall" ]]; then do_uninstall; exit 0; fi
+
+  if [[ "$MODE" == "migrate-config" ]]; then
+    ensure_pyyaml
+    [[ -f "$CONFIG" ]] || die "no config.yaml to migrate (run install first)"
+    python3 "$SCRIPT_DIR/scripts/migrate_config.py" --config "$CONFIG" --example "$EXAMPLE"
+    exit 0
+  fi
 
   ensure_pyyaml
   bootstrap_config
