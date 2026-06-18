@@ -173,7 +173,8 @@ class TestRunWiring(unittest.TestCase):
                 "ollama.host", "ollama.num_ctx", "ollama.summary_model",
                 "ollama.tasks_model", "ollama.vision_model",
                 "ollama.summary_max_chunk_chars",
-                "frames.image_format", "frames.describe_max_chars",
+                "frames.image_format", "frames.jpeg_quality",
+                "frames.describe_max_chars",
                 "frames.frames_summary_max_chunk_chars",
                 "rendering.slides.formats", "context_defaults"]
         missing = [k for k in keys if get(cfg, k) is None]
