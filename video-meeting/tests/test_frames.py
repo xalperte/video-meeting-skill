@@ -1,6 +1,9 @@
 """Frame-step logic tests — stdlib only; ffmpeg/Ollama parts skip when absent."""
 import os
+import shutil
+import subprocess
 import sys
+import tempfile
 import unittest
 
 import fixtures as F
@@ -47,6 +50,30 @@ class TestSlideIdAndManifest(unittest.TestCase):
         self.assertEqual(m["frames"][0]["timestamp_s"], 620)
         self.assertEqual(m["frames"][0]["image"], "frames/slide-0001.png")
         self.assertEqual(m["frames"][1]["timestamp_s"], 4223)
+
+
+class TestExtractFramesFfmpeg(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("ffmpeg"), "ffmpeg not installed")
+    def test_extract_two_frames(self):
+        with tempfile.TemporaryDirectory() as d:
+            mp4 = os.path.join(d, "v.mp4")
+            subprocess.run(
+                ["ffmpeg", "-y", "-loglevel", "error",
+                 "-f", "lavfi", "-i", "color=c=blue:s=160x120:d=4",
+                 "-f", "lavfi", "-i", "sine=frequency=440:duration=4",
+                 "-shortest", mp4], check=True)
+            manifest = os.path.join(d, "frames_manifest.json")
+            p = subprocess.run(
+                [sys.executable, os.path.join(F.SCRIPTS, "extract_frames.py"),
+                 "--video", mp4, "--out-dir", d, "--manifest", manifest,
+                 "0:01", "0:03"],
+                capture_output=True, text=True)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            self.assertTrue(os.path.isfile(os.path.join(d, "frames", "slide-0001.png")))
+            self.assertTrue(os.path.isfile(os.path.join(d, "frames", "slide-0002.png")))
+            m = F.read_json(manifest)
+            self.assertEqual(len(m["frames"]), 2)
+            self.assertEqual(m["frames"][1]["timestamp_s"], 3)
 
 
 if __name__ == "__main__":
