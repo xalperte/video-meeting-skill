@@ -25,6 +25,8 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config_get import load_config, get  # noqa: E402
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 OK, WARN, FAIL = "OK", "WARN", "FAIL"
 GREEN, YELLOW, RED, RESET = "\033[32m", "\033[33m", "\033[31m", "\033[0m"
 _COLOR = {OK: GREEN, WARN: YELLOW, FAIL: RED}
@@ -181,6 +183,16 @@ def check_ollama(cfg):
             record(FAIL, f"Ollama model ({label})",
                    f"{model} not pulled (run: ollama pull {model})")
 
+    # vision model is optional (only the --frames step needs it) -> WARN, not FAIL
+    vmodel = get(cfg, "ollama.vision_model")
+    if vmodel:
+        if present(vmodel):
+            record(OK, "Ollama model (vision)", vmodel)
+        else:
+            record(WARN, "Ollama model (vision)",
+                   f"{vmodel} not pulled — needed only for --frames "
+                   f"(run: ollama pull {vmodel})")
+
 
 def check_kv_cache(cfg):
     """Best-effort: warn if the service env doesn't match the configured KV type."""
@@ -195,6 +207,24 @@ def check_kv_cache(cfg):
     else:
         record(WARN, "Ollama KV cache env",
                f"config wants {want} but service env is: {out or '(unset)'}")
+
+
+def check_config_drift(cfg_path):
+    """Warn if config.yaml is missing keys present in config.example.yaml."""
+    example = os.path.join(ROOT, "config.example.yaml")
+    if not (os.path.isfile(cfg_path) and os.path.isfile(example)):
+        return
+    try:
+        import migrate_config as MC
+        miss = MC.missing_keys(MC._load_raw(example), MC._load_raw(cfg_path))
+    except Exception as exc:  # noqa: BLE001
+        return record(WARN, "config drift", f"could not check: {exc}")
+    if miss:
+        record(WARN, "config drift",
+               f"{len(miss)} newer key(s) missing ({', '.join(miss)}); "
+               "built-in defaults in effect — run: bash install.sh --migrate-config")
+    else:
+        record(OK, "config up to date", os.path.basename(cfg_path))
 
 
 def check_writable(cfg):
@@ -232,6 +262,7 @@ def main():
     check_ollama(cfg)
     check_kv_cache(cfg)
     check_writable(cfg)
+    check_config_drift(args.config)
 
     print("\nPreflight results")
     print("-" * 60)
