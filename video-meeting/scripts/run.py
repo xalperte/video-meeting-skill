@@ -136,6 +136,8 @@ def main():
     ap.add_argument("--detail-level", default=None)
     ap.add_argument("--participants", nargs="*", default=None)
     ap.add_argument("--artifacts", nargs="*", default=None)
+    ap.add_argument("--frames", nargs="*", default=None,
+                    help="timestamps (mm:ss or hh:mm:ss) to capture + describe frames")
     ap.add_argument("--num-speakers", type=int, default=None)
     ap.add_argument("--interactive", action="store_true",
                     help="prompt to confirm gray-zone speakers")
@@ -262,7 +264,9 @@ def main():
                    "--host", host, "--model", get(cfg, "ollama.summary_model", "gemma4:12b"),
                    "--meeting-type", mtype, "--output-language", out_language,
                    "--audience", audience, "--tone", tone, "--detail-level", detail,
-                   "--num-ctx", num_ctx, "--temperature", temp])
+                   "--num-ctx", num_ctx, "--temperature", temp,
+                   "--max-chunk-chars",
+                   str(get(cfg, "ollama.summary_max_chunk_chars", 24000))])
 
     # ---- 7. extract tasks (Ollama) ---------------------------------------- #
     if need_tasks:
@@ -276,6 +280,30 @@ def main():
         if names:
             ecmd += ["--participants", *names]
         run_stage(ecmd)
+
+    # ---- 7b. frames (optional: only when timestamps were given) ------------ #
+    if args.frames:
+        banner("Frames (optional): extract + describe")
+        manifest = P("frames_manifest.json")
+        img_fmt = get(cfg, "frames.image_format", "png")
+        run_stage([sys.executable, script("extract_frames.py"),
+                   "--video", args.video, "--out-dir", mdir, "--manifest", manifest,
+                   "--image-format", img_fmt,
+                   "--jpeg-quality", str(get(cfg, "frames.jpeg_quality", 2)),
+                   "--ffmpeg", get(cfg, "env.ffmpeg_bin", "ffmpeg"),
+                   *args.frames])
+        run_stage([sys.executable, script("describe_frames.py"),
+                   "--manifest", manifest, "--base-dir", mdir,
+                   "--out-details", P("video-frames-details.json"),
+                   "--out-summary", P("video-frames-summary.md"),
+                   "--host", host,
+                   "--vision-model", get(cfg, "ollama.vision_model", "qwen2.5vl:7b"),
+                   "--summary-model", get(cfg, "ollama.summary_model", "gemma4:12b"),
+                   "--output-language", out_language,
+                   "--num-ctx", num_ctx, "--temperature", temp,
+                   "--describe-max-chars", str(get(cfg, "frames.describe_max_chars", 4000)),
+                   "--max-chunk-chars",
+                   str(get(cfg, "frames.frames_summary_max_chunk_chars", 24000))])
 
     # ---- 8. finalize meeting_record.json ---------------------------------- #
     banner("8/9  Assemble meeting_record.json")
@@ -313,6 +341,9 @@ def main():
                    "--record", P("meeting_record.json"), "--out", P("email.md"),
                    "--host", host, "--model", get(cfg, "ollama.summary_model", "gemma4:12b")])
         produced.append("email.md")
+
+    if args.frames:
+        produced += ["frames", "video-frames-details.json", "video-frames-summary.md"]
 
     banner("Done")
     print(f"Outputs in {mdir}:")
