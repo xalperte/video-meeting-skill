@@ -1,0 +1,13 @@
+name: "Client"
+description: "Teal, sans — client-facing, logo-forward"
+accent: "117A65"
+slides:
+  title_layout: "Title Slide"
+  content_layout: "Title and Content"
+xlsx:
+  header_fill: "117A65"
+  header_font_color: "FFFFFF"
+  explicit_fill: "E2EFDA"
+  suggested_fill: "FFF2CC"
+  font_name: "Calibri"
+  banner: false

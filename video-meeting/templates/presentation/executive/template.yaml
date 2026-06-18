@@ -1,0 +1,13 @@
+name: "Executive"
+description: "Navy, serif headings — leadership readouts"
+accent: "1F3864"
+slides:
+  title_layout: "Title Slide"
+  content_layout: "Title and Content"
+xlsx:
+  header_fill: "1F3864"
+  header_font_color: "FFFFFF"
+  explicit_fill: "E2EFDA"
+  suggested_fill: "FFF2CC"
+  font_name: "Calibri"
+  banner: false
