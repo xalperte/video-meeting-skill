@@ -76,6 +76,9 @@ ollama:
   summary_model: "gemma4:12b"          # narrative summarization
   tasks_model: "qwen3.5:9b"           # structured JSON extraction (function-friendly)
   temperature: 0.2
+  summary_max_chunk_chars: 24000      # map-reduce threshold for summarize.py
+                                      # (was a script default; here so it survives upgrades)
+  vision_model: "qwen2.5vl:7b"        # local VLM for the optional frame-description step
 
   # --- Context window (num_ctx) ---
   # Models are Q4_K_M (gemma4:12b ~7.6 GB, qwen3.5:9b ~6 GB), so weights are small
@@ -96,6 +99,15 @@ ollama:
   # (install.sh writes these into the ollama systemd drop-in; see install.md.)
   # For ~128K you would need q4_0 (accepts some quality loss); for 32K, f16 is fine.
   kv_cache_type: "q8_0"               # f16 | q8_0 | q4_0  (must match service env)
+
+# ----------------------------------------------------------------------------
+# Optional frame description (only runs when a run passes specific timestamps)
+# ----------------------------------------------------------------------------
+frames:
+  image_format: "png"                  # png | jpg
+  jpeg_quality: 2                       # ffmpeg -q:v when image_format is jpg
+  describe_max_chars: 4000              # cap per-frame description length
+  frames_summary_max_chunk_chars: 24000 # map-reduce threshold for the frames digest
 
 # ----------------------------------------------------------------------------
 # Speaker recognition (voiceprints — embeddings, NOT synthesized voices)
@@ -152,7 +164,7 @@ rendering:
 # ----------------------------------------------------------------------------
 install:
   manage_ollama: true                 # install service + pull models; false to skip
-  ollama_models: ["gemma4:12b", "qwen3.5:9b"]
+  ollama_models: ["gemma4:12b", "qwen3.5:9b", "qwen2.5vl:7b"]
   install_cuda: false                 # driver/CUDA install is OFF by default (risky)
   pyenv_root: "${USER_HOME}/.pyenv"
   whisper_env: "whisper-env"
