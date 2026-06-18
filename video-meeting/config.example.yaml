@@ -78,7 +78,7 @@ ollama:
   temperature: 0.2
   summary_max_chunk_chars: 24000      # map-reduce threshold for summarize.py
                                       # (was a script default; here so it survives upgrades)
-  vision_model: "qwen2.5vl:7b"        # local VLM for the optional frame-description step
+  vision_model: "qwen3-vl:8b"         # local VLM for the optional frame-description step
 
   # --- Context window (num_ctx) ---
   # Models are Q4_K_M (gemma4:12b ~7.6 GB, qwen3.5:9b ~6 GB), so weights are small
@@ -167,7 +167,7 @@ rendering:
 # ----------------------------------------------------------------------------
 install:
   manage_ollama: true                 # install service + pull models; false to skip
-  ollama_models: ["gemma4:12b", "qwen3.5:9b", "qwen2.5vl:7b"]
+  ollama_models: ["gemma4:12b", "qwen3.5:9b", "qwen3-vl:8b"]
   install_cuda: false                 # driver/CUDA install is OFF by default (risky)
   pyenv_root: "${USER_HOME}/.pyenv"
   whisper_env: "whisper-env"
