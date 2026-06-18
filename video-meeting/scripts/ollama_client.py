@@ -12,12 +12,14 @@ import urllib.error
 import urllib.request
 
 
-def build_payload(model, prompt, system=None, options=None, fmt=None):
+def build_payload(model, prompt, system=None, options=None, fmt=None, images=None):
     """Assemble the /api/generate request body.
 
     `think` is always disabled: thinking models (e.g. qwen3.x) otherwise put
     their output in the `thinking` field and return an empty `response`.
     Non-thinking models and older Ollama versions ignore the field.
+    `images` (a list of base64-encoded image strings) is included only for
+    vision models; omitted entirely when not provided.
     """
     payload = {"model": model, "prompt": prompt, "stream": False, "think": False}
     if system:
@@ -26,13 +28,15 @@ def build_payload(model, prompt, system=None, options=None, fmt=None):
         payload["options"] = options
     if fmt:
         payload["format"] = fmt
+    if images:
+        payload["images"] = images
     return payload
 
 
-def generate(host, model, prompt, system=None, options=None, fmt=None, timeout=900):
+def generate(host, model, prompt, system=None, options=None, fmt=None, images=None, timeout=900):
     """Call /api/generate (non-streaming) and return the response text."""
     url = host.rstrip("/") + "/api/generate"
-    payload = build_payload(model, prompt, system=system, options=options, fmt=fmt)
+    payload = build_payload(model, prompt, system=system, options=options, fmt=fmt, images=images)
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url, data=data, headers={"Content-Type": "application/json"}
