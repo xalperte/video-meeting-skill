@@ -63,7 +63,7 @@ env:
     extra_ld_library_path: ""         # set only if a tool needs it
 
   # Lightweight venv for the document renderers (no GPU): openpyxl, python-pptx,
-  # python-docx. Kept separate so heavy audio deps and render deps don't mix.
+  # python-docx, pyyaml. Kept separate so heavy audio deps and render deps don't mix.
   render:
     python: "${USER_HOME}/.pyenv/versions/render-env/bin/python"
 

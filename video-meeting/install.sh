@@ -186,8 +186,8 @@ phase_pydeps() {
 
   log "render-env deps (document renderers)"
   "$rpy" -m pip install -q --upgrade pip
-  "$rpy" -m pip install -q openpyxl python-pptx python-docx
-  ok "openpyxl + python-pptx + python-docx installed"
+  "$rpy" -m pip install -q openpyxl python-pptx python-docx pyyaml
+  ok "openpyxl + python-pptx + python-docx + pyyaml installed"
 }
 
 # ----------------------------------------------------------------------------

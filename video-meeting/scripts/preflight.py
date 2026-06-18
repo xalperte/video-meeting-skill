@@ -95,9 +95,29 @@ def check_render(cfg):
     py = get(cfg, "env.render.python")
     if not py or not os.path.isfile(py):
         return record(FAIL, "render-env", f"interpreter missing: {py}")
-    for mod in ("openpyxl", "pptx", "docx"):
+    for mod in ("openpyxl", "pptx", "docx", "yaml"):
         ok, detail = venv_import(py, mod)
         record(OK if ok else FAIL, f"render-env: {mod}", detail if not ok else py)
+
+
+def check_template(skill_root, name):
+    """Validate the selected presentation template exists with its base files."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from templates import discover_templates, templates_root
+    root = templates_root(skill_root)
+    folder = os.path.join(root, name)
+    if not os.path.isdir(folder):
+        avail = ", ".join(discover_templates(root)) or "(none)"
+        record(FAIL, "template", f"unknown {name!r}; available: {avail}")
+        return False
+    missing = [f for f in ("slides.pptx", "report.docx")
+               if not os.path.isfile(os.path.join(folder, f))]
+    if missing:
+        record(FAIL, "template",
+               f"{name}: missing {', '.join(missing)} (run build_starter_templates.py)")
+        return False
+    record(OK, "template", folder)
+    return True
 
 
 def check_libreoffice(cfg):
@@ -254,6 +274,9 @@ def main():
     check_whisper(cfg)
     check_pyannote(cfg)
     check_render(cfg)
+    skill_root = os.path.normpath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    check_template(skill_root, get(cfg, "rendering.template", "internal"))
     check_libreoffice(cfg)
     check_gpu(cfg)
     check_model_dir(cfg, "env.whisper.model_dir", "Whisper model dir")
