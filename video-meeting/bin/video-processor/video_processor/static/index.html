@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>video-processor</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <span id="video-name">No video loaded</span>
+    <button id="open-btn" type="button">Open…</button>
+  </header>
+  <main>
+    <section id="player">
+      <video id="video" controls></video>
+      <div class="controls">
+        <span id="time-readout">00:00 (sec 0)</span>
+        <form id="goto-form">
+          <input id="goto-input" type="text"
+                 placeholder="mm:ss, hh:mm:ss or sec N" autocomplete="off">
+          <button type="submit">Go to</button>
+        </form>
+        <button id="mark-btn" type="button">Mark frame</button>
+        <span id="goto-error" class="error"></span>
+      </div>
+      <p class="hint">Tip: click the video to mark the current moment.</p>
+    </section>
+    <aside id="frames">
+      <div class="frames-head">
+        <h2>Frames</h2>
+        <button id="save-btn" type="button">Save</button>
+        <span id="save-status"></span>
+      </div>
+      <ul id="frames-list"></ul>
+    </aside>
+  </main>
+  <div id="browse-modal" class="hidden">
+    <div class="browse-box">
+      <div class="browse-path" id="browse-path"></div>
+      <ul id="browse-list"></ul>
+      <button id="browse-close" type="button">Close</button>
+    </div>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

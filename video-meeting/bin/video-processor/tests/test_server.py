@@ -93,6 +93,17 @@ class ServerTests(unittest.TestCase):
         data = self.client.get("/api/state").get_json()
         self.assertEqual(data["frames"], [])
 
+    def test_index_served(self):
+        resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn(b"video-processor", resp.data)
+        self.assertIn(b"/static/app.js", resp.data)
+
+    def test_static_assets_served(self):
+        for asset in ("/static/app.js", "/static/style.css"):
+            resp = self.client.get(asset)
+            self.assertEqual(resp.status_code, 200, asset)
+
 
 if __name__ == "__main__":
     unittest.main()
