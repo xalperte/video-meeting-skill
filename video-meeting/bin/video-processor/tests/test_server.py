@@ -86,6 +86,13 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 206)
         self.assertEqual(resp.data, b"0123")
 
+    def test_corrupt_frames_file_degrades_to_empty(self):
+        fp = os.path.join(self.tmp.name, "meeting-frames.json")
+        with open(fp, "w") as fh:
+            fh.write("{ this is not valid json ")
+        data = self.client.get("/api/state").get_json()
+        self.assertEqual(data["frames"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

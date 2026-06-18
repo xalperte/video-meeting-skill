@@ -44,10 +44,13 @@ def load_frames(video_path):
     fp = frames_path_for(video_path)
     if not os.path.exists(fp):
         return []
-    with open(fp, "r", encoding="utf-8") as fh:
-        data = json.load(fh)
-    frames = data.get("frames", []) if isinstance(data, dict) else []
-    return _normalize(frames)
+    try:
+        with open(fp, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        frames = data.get("frames", []) if isinstance(data, dict) else []
+        return _normalize(frames)
+    except (OSError, ValueError):
+        return []
 
 
 def save_frames(video_path, frames):
