@@ -178,3 +178,25 @@ want `pyenv` in your shell, add the standard init lines to `~/.bashrc`.
 Process a recording by pointing the skill at an mp4. The first time a new person
 speaks, the skill registers their voiceprint; subsequent meetings recognize them
 automatically. See `design.md` for the full pipeline and data model.
+
+## Upgrading an existing install
+
+Dropping in a new skill bundle preserves your state: `package.sh` excludes
+`config.yaml`, `hf_token`, and `*.token`, so your config and the global
+participant registry are never overwritten — only code (scripts, templates,
+`config.example.yaml`, SKILL.md) is replaced.
+
+New config keys never break an old `config.yaml`: every setting is read with a
+built-in default equal to the example, so the skill keeps working untouched.
+To pick up new keys and the vision model used by `--frames`:
+
+```bash
+bash install.sh --check            # reports config drift + what's missing
+bash install.sh --migrate-config   # appends missing keys to config.yaml
+                                   #   (your values kept; writes config.yaml.bak)
+bash install.sh --all              # idempotent: pulls the vision model, fills gaps
+```
+
+`--migrate-config` only ever *appends* — it never edits or reorders existing
+lines, so customized values (e.g. a raised `summary_max_chunk_chars`, machine
+paths) are preserved. A `config.yaml.bak` backup is written before any change.

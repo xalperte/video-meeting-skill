@@ -81,6 +81,27 @@ Useful flags: `--output-language` (default `auto` = dominant spoken language),
 `--num-speakers N` (if known), `--interactive` (prompt to confirm gray-zone
 speakers). Anything omitted falls back to `context_defaults` in config.
 
+**Processing shared slides/screens (optional).** When the user names specific
+moments — e.g. *"process the following frames at [10:20, 15:10, 32:30, 46:00,
+01:10:23]"* — pass them to `--frames`:
+
+```bash
+python3 scripts/run.py --video meeting.mp4 --title "Demo" \
+    --frames 10:20 15:10 32:30 46:00 01:10:23
+```
+
+Timestamps are `mm:ss` (one colon) or `hh:mm:ss` (two colons). This grabs each
+frame (ffmpeg), describes it with the local Ollama vision model
+(`ollama.vision_model`), and writes a standalone pack — it does **not** alter the
+transcript/summary/tasks artifacts:
+
+- `frames/slide-0001.png …` — the captured frames (1-indexed, in the given order)
+- `video-frames-details.json` — per slide: timestamp, image link, description
+- `video-frames-summary.md` — a summary of the shared presentation
+
+Omit `--frames` and nothing changes. The vision model is pulled by `install.sh`;
+if it is missing the step stops up front with the exact `ollama pull` command.
+
 **Speaker confirmation.** After identification, if any speakers fall in the gray
 zone, `run.py` writes them to `mapping.json` under `pending_confirmation` and (when
 not `--interactive`) continues with them labeled `(?)`. To resolve them, present
@@ -182,6 +203,8 @@ from `meeting_record.json` so they never diverge in content.
 | `slides.pptx` + `slides.odp` | **pptx skill** + LibreOffice convert | Intro → categorized summary (multi-slide ok) → tasks in two groups (explicit / suggested) |
 | `report.pdf` | **pdf skill** | Same record, **report layout** (not slides) |
 | `email.md` | render_email.py | Cover note to send the pack to all attendees, in the output language |
+| `video-frames-details.json` | describe_frames.py | Per-slide timestamp + image + description (only with `--frames`) |
+| `video-frames-summary.md` | describe_frames.py | Summary of the shared slides (only with `--frames`) |
 
 When you reach the rendering steps, **read the relevant skill** (xlsx, pptx, pdf)
 and pass it the structured record plus a layout flag — slides use a

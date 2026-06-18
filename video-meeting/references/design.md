@@ -506,3 +506,30 @@ video-meeting/
 - Exact threshold values (`T_high`, `T_low`) — tune empirically on real samples.
 - N-cap and selection policy for per-participant voiceprint samples.
 - Confirmation UX for the gray-zone speaker step.
+
+---
+
+## Frame description (optional shared-slide capture)
+
+When a meeting shares slides/screens, the user can pass `--frames` with
+timestamps. `extract_frames.py` (ffmpeg) grabs one frame per timestamp into
+`frames/slide-NNNN.<ext>`; `describe_frames.py` describes each with a local
+Ollama **vision** model (`ollama.vision_model`) and summarizes them with the
+text model. Output is standalone (`video-frames-details.json`,
+`video-frames-summary.md`) — deliberately *not* merged into
+`meeting_record.json`, so the main pipeline and its artifacts are unaffected and
+the feature stays fully optional. It runs in the LLM phase (after diarization
+frees VRAM); Ollama `keep_alive=0s` keeps vision and text models from
+co-residing on the 16 GB GPU.
+
+### Upgrade-safe configuration
+
+New config keys are always read with built-in defaults (`get(cfg, key,
+DEFAULT)`), so a pre-existing `config.yaml` keeps working. A few realistically
+tweaked tunables (`ollama.summary_max_chunk_chars`, the `frames.*` knobs) live in
+config so upgrades don't clobber them. `migrate_config.py` reconciles an old
+config against `config.example.yaml` by appending only the missing keys —
+inserting new leaves into existing parent blocks in the raw text rather than
+appending a duplicate top-level key (which `yaml.safe_load` would treat as
+last-wins, wiping siblings). `preflight.py` warns on drift; `install.sh
+--migrate-config` applies it (backup + atomic write).
