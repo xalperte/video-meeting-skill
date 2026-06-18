@@ -92,8 +92,10 @@ hardcoded defaults so a minimal/corporate folder still renders.
 - The hardcoded constants (`HEADER_FILL`, `HEADER_FONT`, `EXPLICIT_FILL`,
   `SUGGEST_FILL`, font) are replaced by values read from `template.yaml.xlsx`,
   with the current values as defaults.
-- If `xlsx.banner` is true and `logo.png` exists, insert a title banner row with
-  the logo at the top of the first sheet; otherwise omit (no layout shift).
+- `xlsx.banner` and `logo.png` are **reserved** (parsed and documented) but the
+  banner row is not drawn in this iteration — starters set `banner: false`.
+  Keeping the key avoids a future schema change; drawing it is a later, optional
+  enhancement.
 
 ## Selection (mirrors `--meeting-type`)
 
