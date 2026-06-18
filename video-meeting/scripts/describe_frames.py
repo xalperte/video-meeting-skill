@@ -124,13 +124,16 @@ def main():
     describe_tpl = load_template(args.templates_dir, "frame_prompts", "describe.md")
 
     if args.dry_run:
-        print(f"(frames: {len(manifest.get('frames', []))})")
-        print("===== DESCRIBE PROMPT (slide-0001) =====")
-        print(fill(describe_tpl, {"__TIMESTAMP__": manifest["frames"][0]["timestamp"],
-                                  "__LANGUAGE__": lang}))
+        frames = manifest.get("frames", [])
+        print(f"(frames: {len(frames)})")
+        if frames:
+            print("===== DESCRIBE PROMPT (slide-0001) =====")
+            print(fill(describe_tpl, {"__TIMESTAMP__": frames[0]["timestamp"],
+                                      "__LANGUAGE__": lang}))
         return
 
     ensure_model(args.host, args.vision_model)
+    ensure_model(args.host, args.summary_model)
 
     descriptions = {}
     for fr in manifest.get("frames", []):
