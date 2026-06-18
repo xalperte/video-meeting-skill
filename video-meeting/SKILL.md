@@ -190,6 +190,16 @@ suggest_tasks: true
 
 Only produce the artifacts listed in `artifacts`; not every meeting needs slides.
 
+## Choosing a presentation template
+
+Artifacts (slides, report, tasks.xlsx) are themed by a **template** chosen for
+the audience. Pass `--template <name>` to `run.py`, or set `rendering.template`
+in `config.yaml`. Built-in templates: `executive` (leadership), `client`
+(client-facing), `internal` (default). List options by looking under
+`templates/presentation/`. To use an organization's own branding, replace
+`slides.pptx`/`report.docx` in a template folder (or add a new folder) — see
+`templates/presentation/README.md`.
+
 ## Outputs
 
 All written into `paths.meetings_dir/<YYYY-MM-DD>-<slug>/`. Every artifact renders
