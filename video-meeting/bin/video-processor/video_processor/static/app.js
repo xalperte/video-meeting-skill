@@ -10,10 +10,11 @@ function parseTimecode(value) {
   }
   const parts = s.split(":");
   if (parts.length > 3) throw new Error("too many ':'");
+  const DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)$/;  // plain decimal only, like Python float()
   const nums = parts.map((p) => {
-    const n = Number(p);
-    if (p.trim() === "" || Number.isNaN(n)) throw new Error("non-numeric");
-    return n;
+    const t = p.trim();
+    if (!DECIMAL.test(t)) throw new Error("non-numeric");
+    return Number(t);
   });
   if (nums.some((n) => n < 0)) throw new Error("negative");
   if (nums.length === 1) return nums[0];
