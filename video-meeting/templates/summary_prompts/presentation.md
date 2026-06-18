@@ -1,0 +1,1 @@
+This was a recorded presentation. Emphasize: the main thesis or goal; the key points by topic; supporting data or examples; and conclusions or calls to action. Action items are usually few — focus on a clear, categorized summary of the content.

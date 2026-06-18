@@ -1,0 +1,1 @@
+This was a backlog grooming session. Emphasize: backlog items reviewed; priority or ordering changes; re-estimations; items added, split, or dropped; and acceptance-criteria clarifications. Prefer sections grouped by epic/theme or by priority tier rather than a flat list.

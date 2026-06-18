@@ -1,0 +1,160 @@
+# =============================================================================
+# video-meeting — example configuration
+# Copy to config.yaml and edit for your machine.
+#
+# PORTABILITY: paths use the ${USER_HOME} token instead of a hardcoded home, so
+# the same config works for any user on any Linux box. The config loader and
+# install.sh expand ${USER_HOME} (and any other ${ENV_VAR}) at load time:
+#   - ${USER_HOME} defaults to the invoking user's $HOME
+#     (e.g. /home/xalperte on this laptop, /home/alice elsewhere).
+#   - Override by exporting USER_HOME before running, if you want a different
+#     base (e.g. a shared models partition): export USER_HOME=/data/video-meeting
+# Tuned for: Ubuntu, single NVIDIA A5000 (16 GB VRAM), 128 GB RAM.
+# Nothing here is on PATH by assumption — scripts invoke tools by absolute path.
+# =============================================================================
+
+# ----------------------------------------------------------------------------
+# Where data lives
+# ----------------------------------------------------------------------------
+paths:
+  # Global, long-lived registry of participants + their voiceprints.
+  global_dir: "${USER_HOME}/.local/share/video-meeting/global"
+  #   global_dir/
+  #     participants.json      <- source of truth (registry.py owns it)
+  #     participants.csv       <- flat export (xlsx produced via the xlsx skill)
+  #     voiceprints/<id>/*.npy <- multiple embedding samples per person
+
+  # One folder per processed meeting: transcript, summary, record, artifacts.
+  meetings_dir: "${USER_HOME}/Documents/meetings"
+
+  # Scratch space for intermediate WAV/JSON between pipeline stages.
+  work_dir: "${USER_HOME}/.cache/video-meeting"
+
+# ----------------------------------------------------------------------------
+# Execution environment for the non-LLM tools
+# Each tool has its own virtualenv (Whisper and pyannote have conflicting deps).
+# Scripts call these interpreters by absolute path — never `source activate`.
+# ----------------------------------------------------------------------------
+env:
+  ffmpeg_bin: "/usr/bin/ffmpeg"        # system binary; same on most distros
+
+  whisper:
+    python: "${USER_HOME}/.pyenv/versions/whisper-env/bin/python"
+    impl: "faster-whisper"            # "faster-whisper" | "whisper.cpp"
+    binary: ""                        # set only if impl == whisper.cpp
+    model_dir: "${USER_HOME}/models/whisper"
+    model: "large-v3"                 # large-v3 | large-v3-turbo
+    compute_type: "float16"           # float16 fits 16 GB; int8_float16 if tight
+    beam_size: 5
+    vad_filter: true                  # drop silence on long recordings
+    workdir: "${USER_HOME}/.cache/video-meeting/whisper"
+
+  pyannote:
+    python: "${USER_HOME}/.pyenv/versions/pyannote-env/bin/python"
+    model_dir: "${USER_HOME}/models/pyannote"
+    diarization_model: "pyannote/speaker-diarization-3.1"
+    embedding_model: "pyannote/embedding"
+    hf_token_file: "${USER_HOME}/.config/video-meeting/hf_token"  # gated models
+    workdir: "${USER_HOME}/.cache/video-meeting/pyannote"
+
+  cuda:
+    visible_devices: "0"              # the A5000
+    hf_home: "${USER_HOME}/.cache/huggingface"
+    extra_ld_library_path: ""         # set only if a tool needs it
+
+  # Lightweight venv for the document renderers (no GPU): openpyxl, python-pptx,
+  # python-docx. Kept separate so heavy audio deps and render deps don't mix.
+  render:
+    python: "${USER_HOME}/.pyenv/versions/render-env/bin/python"
+
+# ----------------------------------------------------------------------------
+# LLMs (served by Ollama — a running service, reached over HTTP, not spawned)
+# ----------------------------------------------------------------------------
+ollama:
+  host: "http://127.0.0.1:11434"
+  keep_alive: "0s"                    # unload promptly so audio stages get VRAM
+  summary_model: "gemma4:12b"          # narrative summarization
+  tasks_model: "qwen3.5:9b"           # structured JSON extraction (function-friendly)
+  temperature: 0.2
+
+  # --- Context window (num_ctx) ---
+  # Models are Q4_K_M (gemma4:12b ~7.6 GB, qwen3.5:9b ~6 GB), so weights are small
+  # and most VRAM is free for the KV cache. The architectural max is 256K, but the
+  # binding constraint on 16 GB is the KV cache, not the weights:
+  #     256K -> ~tens of GB KV -> does NOT fit (would spill to CPU, crawl)
+  #     128K -> tight/over at fp16; only with q4_0 KV (quality cost)
+  #      64K -> SAFE with q8_0 KV-cache quantization + flash attention  <-- chosen
+  #      32K -> fits even at fp16 KV
+  # gemma4's sliding-window attention keeps the KV cache smaller than a naive
+  # estimate, and long transcripts are map-reduce chunked anyway, so 64K is ample.
+  num_ctx: 65536                      # 64K, safe with q8_0 KV cache (below)
+
+  # KV-cache quantization is enforced on the Ollama SERVICE via env vars; this
+  # field documents the intended setting. To make 64K fit reliably, start the
+  # service with:
+  #   OLLAMA_FLASH_ATTENTION=1 OLLAMA_KV_CACHE_TYPE=q8_0
+  # (install.sh writes these into the ollama systemd drop-in; see install.md.)
+  # For ~128K you would need q4_0 (accepts some quality loss); for 32K, f16 is fine.
+  kv_cache_type: "q8_0"               # f16 | q8_0 | q4_0  (must match service env)
+
+# ----------------------------------------------------------------------------
+# Speaker recognition (voiceprints — embeddings, NOT synthesized voices)
+# ----------------------------------------------------------------------------
+speaker_id:
+  thresholds:
+    high: 0.75      # >= high  -> confident match, assign automatically
+    low:  0.55      # <  low   -> no match, treat as a new participant
+                    # between  -> "unconfirmed": ask the user to confirm
+  similarity: "cosine"
+  score_strategy: "best"   # best | mean  (across a person's sample set)
+
+voiceprints:
+  max_samples_per_person: 8           # keep N best/recent embeddings per person
+  add_sample_on_match: true           # grow the set over time for robustness
+  min_turn_seconds: 3.0               # ignore turns too short to embed reliably
+  reference_clip_seconds: 6           # length of optional human-check .wav
+
+# ----------------------------------------------------------------------------
+# Defaults for the context object (per-run values override these)
+# ----------------------------------------------------------------------------
+context_defaults:
+  meeting_type: "catchup"             # feature | grooming | catchup | presentation | other
+  output_language: "auto"            # auto = dominant spoken language; or en|zh|es|pt
+  audience: "team"                   # team | leadership | client
+  tone: "neutral"                    # neutral | concise | formal
+  detail_level: "standard"           # brief | standard | deep
+  suggest_tasks: true
+  artifacts:                          # which deliverables to produce
+    - transcript
+    - summary
+    - tasks
+    - slides
+    - report
+    - email
+
+# ----------------------------------------------------------------------------
+# Rendering (delegated to the xlsx / pptx / pdf skills)
+# ----------------------------------------------------------------------------
+rendering:
+  slides:
+    formats: ["pptx", "odp"]          # pptx built first, then converted
+    libreoffice_bin: "/usr/bin/soffice"   # for pptx -> odp headless convert
+    layout: "presentation"
+  report:
+    layout: "report"                  # same record, report layout (not slides)
+  tasks_xlsx:
+    columns: [title, type, assignee, priority, source_ts, confidence]
+  email:
+    format: "markdown"
+
+# ----------------------------------------------------------------------------
+# Installer behaviour (used by install.sh)
+# ----------------------------------------------------------------------------
+install:
+  manage_ollama: true                 # install service + pull models; false to skip
+  ollama_models: ["gemma4:12b", "qwen3.5:9b"]
+  install_cuda: false                 # driver/CUDA install is OFF by default (risky)
+  pyenv_root: "${USER_HOME}/.pyenv"
+  whisper_env: "whisper-env"
+  pyannote_env: "pyannote-env"
+  render_env: "render-env"

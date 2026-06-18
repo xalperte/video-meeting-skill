@@ -1,0 +1,1 @@
+This was a feature discussion. Emphasize: what the feature is and why; decisions reached; scope split into what is needed NOW vs LATER vs what should CHANGE; technical constraints or risks raised; and any open questions left unresolved. Organize sections around these themes.

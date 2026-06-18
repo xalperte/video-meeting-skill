@@ -1,0 +1,1 @@
+For a feature discussion, explicit items are concrete implementation, design, or spec tasks that were agreed. Good ai_suggested items include: tests to add, edge cases to handle, docs to update, follow-up spikes for open questions, and stakeholders to sync with. Separate now-vs-later in the titles where the meeting did.

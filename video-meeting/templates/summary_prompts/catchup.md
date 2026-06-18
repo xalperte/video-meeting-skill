@@ -1,0 +1,1 @@
+This was a team catch-up / status meeting. Emphasize: what each person reported as done and in progress; blockers; and comments or decisions from the product manager or leads. Prefer a section per person for status, plus a section for cross-cutting decisions and blockers.

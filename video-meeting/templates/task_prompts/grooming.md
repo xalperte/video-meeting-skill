@@ -1,0 +1,1 @@
+For backlog grooming, explicit items are backlog changes that were agreed: re-prioritizations, re-estimates, splits, new stories, and clarified acceptance criteria. Good ai_suggested items include: stories that should be created to cover gaps surfaced in discussion, and items that need more detail before they are ready.

@@ -1,0 +1,15 @@
+# Local, machine-specific config (generated from config.example.yaml)
+config.yaml
+
+# Never commit secrets — tokens live in ~/.config, but guard against stray copies
+hf_token
+*.token
+*token*.txt
+
+# Python / build noise
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store

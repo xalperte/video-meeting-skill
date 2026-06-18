@@ -1,0 +1,1 @@
+For a recorded presentation, explicit action items are usually few — only genuine calls to action stated by the presenter. Good ai_suggested items include reasonable next steps a listener should take based on the content. Keep the bar high; do not manufacture tasks where the content is purely informational.

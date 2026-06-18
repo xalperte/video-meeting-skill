@@ -1,0 +1,1 @@
+Summarize the meeting on its own terms. Identify the main topics discussed, decisions reached, and any commitments or open questions, and organize the summary into the categories that best fit the actual content.

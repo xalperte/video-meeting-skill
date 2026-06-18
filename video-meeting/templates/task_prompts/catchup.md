@@ -1,0 +1,1 @@
+For a catch-up, explicit items are commitments people made for the next period and any actions the product manager or leads assigned. Good ai_suggested items include: unblocking actions for stated blockers, and follow-ups implied by status updates that nobody explicitly owned.
