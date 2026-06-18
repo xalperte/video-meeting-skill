@@ -28,6 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 from config_get import load_config, get  # noqa: E402
+from templates import templates_root, resolve_template  # noqa: E402
 
 LANG_NAMES = {"en": "English", "es": "Spanish", "zh": "Chinese", "pt": "Portuguese",
               "fr": "French", "de": "German", "it": "Italian"}
@@ -130,6 +131,7 @@ def main():
     ap.add_argument("--title", default=None)
     ap.add_argument("--date", default=None)
     ap.add_argument("--meeting-type", default=None)
+    ap.add_argument("--template", default=None)
     ap.add_argument("--output-language", default=None)
     ap.add_argument("--audience", default=None)
     ap.add_argument("--tone", default=None)
@@ -151,6 +153,8 @@ def main():
     cd = get(cfg, "context_defaults", {}) or {}
     mtype = args.meeting_type or cd.get("meeting_type", "other")
     mtype = mtype if mtype in MEETING_TYPES else "other"
+    tname = args.template or get(cfg, "rendering.template", "internal")
+    template_dir, _ = resolve_template(templates_root(ROOT), tname)
     audience = args.audience or cd.get("audience", "team")
     tone = args.tone or cd.get("tone", "neutral")
     detail = args.detail_level or cd.get("detail_level", "standard")
@@ -323,18 +327,20 @@ def main():
         produced.append("summary.md")
     if "tasks" in artifacts:
         run_stage([rpy, script("render_tasks_xlsx.py"),
-                   "--record", P("meeting_record.json"), "--out", P("tasks.xlsx")])
+                   "--record", P("meeting_record.json"), "--out", P("tasks.xlsx"),
+                   "--template-dir", template_dir])
         produced.append("tasks.xlsx")
     if "slides" in artifacts:
         formats = get(cfg, "rendering.slides.formats", ["pptx", "odp"])
         run_stage([rpy, script("render_slides.py"),
                    "--record", P("meeting_record.json"), "--out-pptx", P("slides.pptx"),
-                   "--formats", *formats, "--libreoffice", soffice])
+                   "--formats", *formats, "--libreoffice", soffice,
+                   "--template-dir", template_dir])
         produced += [f"slides.{f}" for f in formats]
     if "report" in artifacts:
         run_stage([rpy, script("render_report.py"),
                    "--record", P("meeting_record.json"), "--out-pdf", P("report.pdf"),
-                   "--libreoffice", soffice])
+                   "--libreoffice", soffice, "--template-dir", template_dir])
         produced += ["report.pdf", "report.docx"]
     if "email" in artifacts:
         run_stage([sys.executable, script("render_email.py"),

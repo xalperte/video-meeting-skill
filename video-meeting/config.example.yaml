@@ -148,6 +148,9 @@ context_defaults:
 # Rendering (delegated to the xlsx / pptx / pdf skills)
 # ----------------------------------------------------------------------------
 rendering:
+  # Which presentation template to use (folder under templates/presentation/).
+  # Pick per audience: executive | client | internal (or your own folder).
+  template: "internal"
   slides:
     formats: ["pptx", "odp"]          # pptx built first, then converted
     libreoffice_bin: "/usr/bin/soffice"   # for pptx -> odp headless convert
