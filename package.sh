@@ -44,14 +44,17 @@ skill_dir, out_dir = os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2])
 name = os.path.basename(skill_dir)
 
 # ---- exclusion rules (build artifacts + machine-specific + secrets) --------- #
-EXCLUDE_DIRS   = {"__pycache__", "node_modules", ".git"}
+EXCLUDE_DIRS   = {"__pycache__", "node_modules", ".git", ".venv", "venv"}
 ROOT_EXCL_DIRS = {"evals"}                 # excluded only at the skill root
 EXCLUDE_FILES  = {".DS_Store", "config.yaml", "hf_token"}   # config.yaml/token: never ship
 EXCLUDE_GLOBS  = ("*.pyc", "*.token", "*token*.txt")
 
 def excluded(rel):
+    import fnmatch
     parts = rel.split(os.sep)
     if any(p in EXCLUDE_DIRS for p in parts):
+        return True
+    if any(fnmatch.fnmatch(p, "*.egg-info") for p in parts):
         return True
     if len(parts) > 1 and parts[0] in ROOT_EXCL_DIRS:
         return True
