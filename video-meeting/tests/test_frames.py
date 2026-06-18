@@ -76,5 +76,53 @@ class TestExtractFramesFfmpeg(unittest.TestCase):
             self.assertEqual(m["frames"][1]["timestamp_s"], 3)
 
 
+class TestDescribeHelpers(unittest.TestCase):
+    def _manifest(self):
+        return {
+            "video": "/abs/meeting.mp4",
+            "image_format": "png",
+            "frames": [
+                {"slide": "slide-0001", "timestamp": "10:20", "timestamp_s": 620,
+                 "image": "frames/slide-0001.png"},
+                {"slide": "slide-0002", "timestamp": "15:10", "timestamp_s": 910,
+                 "image": "frames/slide-0002.png"},
+            ],
+        }
+
+    def test_build_details_shape(self):
+        import describe_frames as D
+        det = D.build_details(self._manifest(),
+                              {"slide-0001": "Title slide about Q3 plan",
+                               "slide-0002": "Architecture diagram with 3 services"},
+                              vision_model="qwen2.5vl:7b", output_language="English")
+        self.assertEqual(det["video"], "meeting.mp4")        # basename only
+        self.assertEqual(det["vision_model"], "qwen2.5vl:7b")
+        self.assertEqual(len(det["frames"]), 2)
+        self.assertEqual(det["frames"][0]["slide"], "slide-0001")
+        self.assertEqual(det["frames"][0]["image"], "frames/slide-0001.png")
+        self.assertEqual(det["frames"][1]["text"], "Architecture diagram with 3 services")
+
+    def test_missing_description_is_empty_string(self):
+        import describe_frames as D
+        det = D.build_details(self._manifest(), {"slide-0001": "x"},
+                              vision_model="m", output_language="English")
+        self.assertEqual(det["frames"][1]["text"], "")
+
+    def test_render_digest_md(self):
+        import describe_frames as D
+        det = D.build_details(self._manifest(),
+                              {"slide-0001": "A", "slide-0002": "B"}, "m", "English")
+        md = D.render_digest_md(det)
+        self.assertIn("## slide-0001 [10:20]", md)
+        self.assertIn("A", md)
+        self.assertIn("## slide-0002 [15:10]", md)
+
+    def test_truncate(self):
+        import describe_frames as D
+        self.assertEqual(D.truncate("abc", 10), "abc")
+        self.assertTrue(D.truncate("a" * 100, 10).endswith("…"))
+        self.assertLessEqual(len(D.truncate("a" * 100, 10)), 11)
+
+
 if __name__ == "__main__":
     unittest.main()
