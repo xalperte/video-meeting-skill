@@ -94,9 +94,9 @@ class TestDescribeHelpers(unittest.TestCase):
         det = D.build_details(self._manifest(),
                               {"slide-0001": "Title slide about Q3 plan",
                                "slide-0002": "Architecture diagram with 3 services"},
-                              vision_model="qwen2.5vl:7b", output_language="English")
+                              vision_model="qwen3-vl:8b", output_language="English")
         self.assertEqual(det["video"], "meeting.mp4")        # basename only
-        self.assertEqual(det["vision_model"], "qwen2.5vl:7b")
+        self.assertEqual(det["vision_model"], "qwen3-vl:8b")
         self.assertEqual(len(det["frames"]), 2)
         self.assertEqual(det["frames"][0]["slide"], "slide-0001")
         self.assertEqual(det["frames"][0]["image"], "frames/slide-0001.png")
