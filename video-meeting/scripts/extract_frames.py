@@ -70,6 +70,7 @@ def build_manifest(video, timestamps, image_format="png"):
 
 
 def extract_one(ffmpeg, video, seconds, out_path, image_format, jpeg_quality):
+    """Grab a single frame at `seconds` into out_path (ffmpeg); exit on failure."""
     cmd = [ffmpeg, "-y", "-loglevel", "error", "-ss", str(seconds), "-i", video,
            "-frames:v", "1"]
     if image_format in ("jpg", "jpeg"):
@@ -96,7 +97,10 @@ def main():
     if not os.path.isfile(args.video):
         sys.exit(f"video not found: {args.video}")
 
-    manifest = build_manifest(args.video, args.timestamps, args.image_format)
+    try:
+        manifest = build_manifest(args.video, args.timestamps, args.image_format)
+    except ValueError as exc:
+        sys.exit(f"invalid timestamp: {exc}")
     frames_dir = os.path.join(args.out_dir, "frames")
     os.makedirs(frames_dir, exist_ok=True)
 
