@@ -29,7 +29,7 @@ time to seek, edit the label inline, ✕ to delete, "Save" to write the JSON.
 {
   "video": "meeting.mp4",
   "frames": [
-    {"timestamp_s": 70.0, "timestamp": "01:10", "label": "Architecture slide"}
+    {"timestamp_s": 70.0, "timestamp": "01:10.000", "label": "Architecture slide"}
   ]
 }
 ```

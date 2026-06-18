@@ -35,7 +35,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         fr = resp.get_json()["frames"]
         self.assertEqual([f["timestamp_s"] for f in fr], [70.0, 130.5])
-        self.assertEqual(fr[0]["timestamp"], "01:10")
+        self.assertEqual(fr[0]["timestamp"], "01:10.000")
         self.assertEqual(fr[0]["label"], "a")
 
         fp = os.path.join(self.tmp.name, "meeting-frames.json")

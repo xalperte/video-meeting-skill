@@ -37,15 +37,18 @@ def parse_timecode(value):
 
 
 def format_timecode(seconds):
-    """float seconds -> 'mm:ss', or 'hh:mm:ss' when >= 1 hour.
+    """float seconds -> 'mm:ss.mmm', or 'hh:mm:ss.mmm' when >= 1 hour.
 
-    Fractional seconds are dropped to whole seconds for display.
+    Seconds are rounded to the nearest millisecond, so the full sub-second
+    precision of ``seconds`` is shown (e.g. 130.5 -> '02:10.500'). Rounding
+    carries correctly across second/minute/hour boundaries.
     """
     if seconds < 0:
         raise ValueError("negative seconds")
-    total = int(seconds)
-    h, rem = divmod(total, 3600)
-    m, s = divmod(rem, 60)
+    ms_total = round(seconds * 1000)
+    h, rem = divmod(ms_total, 3600_000)
+    m, rem = divmod(rem, 60_000)
+    s, ms = divmod(rem, 1000)
     if h:
-        return "%02d:%02d:%02d" % (h, m, s)
-    return "%02d:%02d" % (m, s)
+        return "%02d:%02d:%02d.%03d" % (h, m, s, ms)
+    return "%02d:%02d.%03d" % (m, s, ms)

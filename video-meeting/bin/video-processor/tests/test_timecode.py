@@ -41,17 +41,31 @@ class ParseTimecode(unittest.TestCase):
 
 class FormatTimecode(unittest.TestCase):
     def test_mm_ss(self):
-        self.assertEqual(format_timecode(70), "01:10")
+        self.assertEqual(format_timecode(70), "01:10.000")
 
     def test_hh_mm_ss(self):
-        self.assertEqual(format_timecode(3661), "01:01:01")
+        self.assertEqual(format_timecode(3661), "01:01:01.000")
 
-    def test_drops_fraction(self):
-        self.assertEqual(format_timecode(130.5), "02:10")
+    def test_milliseconds(self):
+        self.assertEqual(format_timecode(130.5), "02:10.500")
+
+    def test_rounds_to_milliseconds(self):
+        self.assertEqual(format_timecode(70.0000001), "01:10.000")
+        self.assertEqual(format_timecode(85.0833), "01:25.083")
+
+    def test_rounding_carries_into_seconds_and_minutes(self):
+        # 59.9996 s rounds up to 60.000 -> 01:00.000
+        self.assertEqual(format_timecode(59.9996), "01:00.000")
 
     def test_negative_raises(self):
         with self.assertRaises(ValueError):
             format_timecode(-1)
+
+
+class RoundTrip(unittest.TestCase):
+    def test_fractional_mm_ss_round_trips(self):
+        self.assertEqual(parse_timecode("02:10.500"), 130.5)
+        self.assertEqual(format_timecode(parse_timecode("02:10.500")), "02:10.500")
 
 
 if __name__ == "__main__":

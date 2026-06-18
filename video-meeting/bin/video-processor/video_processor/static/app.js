@@ -23,12 +23,15 @@ function parseTimecode(value) {
 }
 
 function formatTimecode(seconds) {
-  const total = Math.floor(seconds);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const pad = (n) => String(n).padStart(2, "0");
-  return h ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  // Round to milliseconds and carry across second/minute/hour boundaries
+  // (twin of timecode.py format_timecode).
+  let rem = Math.round(seconds * 1000);
+  const h = Math.floor(rem / 3600000); rem -= h * 3600000;
+  const m = Math.floor(rem / 60000); rem -= m * 60000;
+  const s = Math.floor(rem / 1000); const ms = rem - s * 1000;
+  const pad = (n, w = 2) => String(n).padStart(w, "0");
+  const tail = `${pad(m)}:${pad(s)}.${pad(ms, 3)}`;
+  return h ? `${pad(h)}:${tail}` : tail;
 }
 
 // --- state ---
@@ -80,7 +83,7 @@ function addFrame(seconds) {
 
 video.addEventListener("timeupdate", () => {
   timeReadout.textContent =
-    `${formatTimecode(video.currentTime)} (sec ${Math.floor(video.currentTime)})`;
+    `${formatTimecode(video.currentTime)} (sec ${video.currentTime.toFixed(3)})`;
 });
 video.addEventListener("click", () => {
   if (video.src) addFrame(video.currentTime);
