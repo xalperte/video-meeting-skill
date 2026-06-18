@@ -20,19 +20,22 @@ import sys
 from pptx import Presentation
 from pptx.util import Pt
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from templates import find_layout_by_name, load_template_yaml, slides_layouts  # noqa: E402
+
 MAX_BULLETS = 7  # split a section across slides beyond this many points
 
 
-def add_title_slide(prs, title, subtitle):
-    slide = prs.slides.add_slide(prs.slide_layouts[0])
+def add_title_slide(prs, layout, title, subtitle):
+    slide = prs.slides.add_slide(layout)
     slide.shapes.title.text = title
     if slide.placeholders and len(slide.placeholders) > 1:
         slide.placeholders[1].text = subtitle
 
 
-def add_bullets_slide(prs, title, bullets):
+def add_bullets_slide(prs, layout, title, bullets):
     """bullets: list of (text, level)."""
-    slide = prs.slides.add_slide(prs.slide_layouts[1])
+    slide = prs.slides.add_slide(layout)
     slide.shapes.title.text = title
     body = slide.placeholders[1].text_frame
     body.clear()
@@ -64,29 +67,34 @@ def item_line(t):
     return f"{t.get('title','').strip()} — {who}" + (f"  [{pri}]" if pri else "")
 
 
-def build(prs, record):
+def build(prs, record, layout_cfg):
+    title_layout, _ = find_layout_by_name(
+        prs.slide_layouts, layout_cfg["title_layout"], 0)
+    content_layout, _ = find_layout_by_name(
+        prs.slide_layouts, layout_cfg["content_layout"], 1)
+
     m = record.get("meeting", {})
     title = m.get("title", "Meeting")
     sub_bits = [b for b in (m.get("date"), (m.get("type") or "").title()) if b]
-    add_title_slide(prs, title, "  ·  ".join(sub_bits))
+    add_title_slide(prs, title_layout, title, "  ·  ".join(sub_bits))
 
     tldr = record.get("summary", {}).get("tldr", "").strip()
     if tldr:
-        add_bullets_slide(prs, "Overview", [(tldr, 0)])
+        add_bullets_slide(prs, content_layout, "Overview", [(tldr, 0)])
 
     for sec in record.get("summary", {}).get("sections", []):
         cat = sec.get("category", "Notes")
         bullets = [(p, 0) for p in sec.get("points", [])]
         for stitle, sb in chunked(cat, bullets):
-            add_bullets_slide(prs, stitle, sb)
+            add_bullets_slide(prs, content_layout, stitle, sb)
 
     items = record.get("action_items", [])
     explicit = [item_line(t) for t in items if t.get("type") == "explicit"]
     suggested = [item_line(t) for t in items if t.get("type") == "ai_suggested"]
     for stitle, sb in chunked("Action Items", [(x, 0) for x in explicit]):
-        add_bullets_slide(prs, stitle, sb or [("(none)", 0)])
+        add_bullets_slide(prs, content_layout, stitle, sb or [("(none)", 0)])
     for stitle, sb in chunked("Suggested (AI)", [(x, 0) for x in suggested]):
-        add_bullets_slide(prs, stitle, sb or [("(none)", 0)])
+        add_bullets_slide(prs, content_layout, stitle, sb or [("(none)", 0)])
 
 
 def convert_to(soffice, fmt, src, outdir):
@@ -99,30 +107,38 @@ def convert_to(soffice, fmt, src, outdir):
     return out if os.path.isfile(out) else None
 
 
+def render(record_path, out_pptx, formats, libreoffice, template_dir=None):
+    with open(record_path, "r", encoding="utf-8") as fh:
+        record = json.load(fh)
+
+    data = load_template_yaml(template_dir) if template_dir else {}
+    base = os.path.join(template_dir, "slides.pptx") if template_dir else None
+    prs = Presentation(base) if base and os.path.isfile(base) else Presentation()
+
+    build(prs, record, slides_layouts(data))
+    os.makedirs(os.path.dirname(os.path.abspath(out_pptx)) or ".", exist_ok=True)
+    prs.save(out_pptx)
+    sys.stderr.write(f"  slides.pptx: {len(prs.slides._sldIdLst)} slides -> {out_pptx}\n")
+
+    if "odp" in formats:
+        outdir = os.path.dirname(os.path.abspath(out_pptx)) or "."
+        odp = convert_to(libreoffice, "odp", out_pptx, outdir)
+        if odp:
+            sys.stderr.write(f"  slides.odp -> {odp}\n")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Render slides from the meeting record.")
     ap.add_argument("--record", required=True)
     ap.add_argument("--out-pptx", required=True)
     ap.add_argument("--formats", nargs="*", default=["pptx", "odp"])
     ap.add_argument("--libreoffice", default="soffice")
+    ap.add_argument("--template-dir", default=None)
     args = ap.parse_args()
 
     if not os.path.isfile(args.record):
         sys.exit(f"record not found: {args.record}")
-    with open(args.record, "r", encoding="utf-8") as fh:
-        record = json.load(fh)
-
-    prs = Presentation()
-    build(prs, record)
-    os.makedirs(os.path.dirname(os.path.abspath(args.out_pptx)) or ".", exist_ok=True)
-    prs.save(args.out_pptx)
-    sys.stderr.write(f"  slides.pptx: {len(prs.slides._sldIdLst)} slides -> {args.out_pptx}\n")
-
-    if "odp" in args.formats:
-        outdir = os.path.dirname(os.path.abspath(args.out_pptx)) or "."
-        odp = convert_to(args.libreoffice, "odp", args.out_pptx, outdir)
-        if odp:
-            sys.stderr.write(f"  slides.odp -> {odp}\n")
+    render(args.record, args.out_pptx, args.formats, args.libreoffice, args.template_dir)
 
 
 if __name__ == "__main__":
