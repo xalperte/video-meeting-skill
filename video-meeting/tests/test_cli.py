@@ -15,6 +15,7 @@ ALL_SCRIPTS = [
     "summarize.py", "extract_tasks.py", "render_email.py", "render_tasks_xlsx.py",
     "render_slides.py", "render_report.py", "identify_speakers.py", "registry.py",
     "preflight.py", "run.py", "config_get.py",
+    "extract_frames.py", "describe_frames.py", "migrate_config.py",
 ]
 
 
