@@ -167,8 +167,10 @@ def main():
     if args.dry_run:
         print("(dry-run) run without --dry-run to append them.")
         return
-    apply(args.config, example)
-    print(f"Appended missing keys. Backup: {args.config}.bak")
+    if apply(args.config, example):
+        print(f"Appended missing keys. Backup: {args.config}.bak")
+    else:
+        print("No changes applied (some keys may need manual attention).")
 
 
 if __name__ == "__main__":
