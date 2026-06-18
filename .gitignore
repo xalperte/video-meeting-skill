@@ -1,0 +1,51 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ── Local / secret config ───────────────────────────────
+# Machine-specific config (generated from config.example.yaml)
+config.yaml
+# Secrets — tokens live in ~/.config; guard against stray copies
+hf_token
+*.token
+*token*.txt
+
+# ── Editors / IDEs ──────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*~
+
+# ── OS noise ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Media / binary artifacts (inputs & generated outputs) ─
+# The packaged skill bundle (video-meeting.skill) is committed
+# intentionally and is NOT ignored.
+*.mp4
+*.mkv
+*.mov
+*.avi
+*.webm
+*.m4v
+*.wav
+*.mp3
+*.zip
+*.tar
+*.tar.gz
+*.tgz
