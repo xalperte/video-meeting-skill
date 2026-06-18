@@ -1,0 +1,19 @@
+[project]
+name = "video-processor"
+version = "0.1.0"
+description = "Interactive frame-marking tool for meeting videos"
+requires-python = ">=3.9"
+dependencies = ["flask>=3.0"]
+
+[project.scripts]
+video-processor = "video_processor.__main__:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["video_processor"]
+
+[tool.setuptools.package-data]
+video_processor = ["static/*"]
