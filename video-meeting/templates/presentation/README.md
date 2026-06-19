@@ -21,7 +21,8 @@ across templates — only branding/design changes.
 
 ## Built-in starters
 
-- `executive` — navy, serif headings (leadership readouts)
+- `executive` — navy (`1A2238`) + gold (`B08D57`), Cambria headings, with logo
+  and the corporate report header/footer (leadership readouts)
 - `client` — teal, sans (client-facing)
 - `internal` — minimal grey (default)
 
