@@ -76,6 +76,19 @@ def styled_table(doc, rows, cols):
     return table
 
 
+def add_heading(doc, text, level):
+    """Add a heading, falling back to a bold paragraph if the heading style
+    is absent/unresolvable in a drop-in base document."""
+    try:
+        return doc.add_heading(text, level=level)
+    except KeyError:
+        p = doc.add_paragraph()
+        run = p.add_run(text)
+        run.bold = True
+        run.font.size = Pt(16 if level == 0 else max(11, 15 - level))
+        return p
+
+
 def add_items_table(doc, items):
     if not items:
         doc.add_paragraph("(none)")
@@ -95,7 +108,7 @@ def add_items_table(doc, items):
 
 def build(doc, record):
     m = record.get("meeting", {})
-    doc.add_heading(m.get("title", "Meeting") + " — Meeting Report", level=0)
+    add_heading(doc, m.get("title", "Meeting") + " — Meeting Report", 0)
 
     meta_bits = []
     if m.get("date"):
@@ -113,7 +126,7 @@ def build(doc, record):
     # Participants
     parts = record.get("participants", [])
     if parts:
-        doc.add_heading("Participants", level=1)
+        add_heading(doc, "Participants", 1)
         table = styled_table(doc, 1, 3)
         for c, head in enumerate(["Name", "Status", "Confidence"]):
             table.rows[0].cells[c].paragraphs[0].add_run(head).bold = True
@@ -126,15 +139,15 @@ def build(doc, record):
     # Executive summary
     tldr = record.get("summary", {}).get("tldr", "").strip()
     if tldr:
-        doc.add_heading("Executive Summary", level=1)
+        add_heading(doc, "Executive Summary", 1)
         doc.add_paragraph(tldr)
 
     # Summary by category
     sections = record.get("summary", {}).get("sections", [])
     if sections:
-        doc.add_heading("Summary", level=1)
+        add_heading(doc, "Summary", 1)
         for sec in sections:
-            doc.add_heading(sec.get("category", "Notes"), level=2)
+            add_heading(doc, sec.get("category", "Notes"), 2)
             for pt in sec.get("points", []):
                 add_bullet(doc, pt)
 
@@ -142,19 +155,19 @@ def build(doc, record):
     items = record.get("action_items", [])
     explicit = [t for t in items if t.get("type") == "explicit"]
     suggested = [t for t in items if t.get("type") == "ai_suggested"]
-    doc.add_heading("Action Items", level=1)
-    doc.add_heading("Agreed in the meeting", level=2)
+    add_heading(doc, "Action Items", 1)
+    add_heading(doc, "Agreed in the meeting", 2)
     add_items_table(doc, explicit)
-    doc.add_heading("Suggested (AI)", level=2)
+    add_heading(doc, "Suggested (AI)", 2)
     add_items_table(doc, suggested)
 
     # Decisions / open questions
     if record.get("decisions"):
-        doc.add_heading("Decisions", level=1)
+        add_heading(doc, "Decisions", 1)
         for d in record["decisions"]:
             add_bullet(doc, d)
     if record.get("open_questions"):
-        doc.add_heading("Open Questions", level=1)
+        add_heading(doc, "Open Questions", 1)
         for q in record["open_questions"]:
             add_bullet(doc, q)
 
