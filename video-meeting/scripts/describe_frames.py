@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Optional stage — describe extracted frames with a local Ollama vision model,
-then summarize all descriptions into a markdown digest.
+Optional stage — OCR extracted frames with a local Ollama OCR/vision model,
+then summarize all the OCR'd text into a markdown digest.
 
 Stdlib only; reuses ollama_client (HTTP) and summarize helpers. Runs with the
 system python3. Reads the manifest written by extract_frames.py; never calls
-ffmpeg itself. Vision and text-summary models never co-reside — Ollama's
+ffmpeg itself. OCR and text-summary models never co-reside — Ollama's
 keep_alive=0s unloads one before the next loads.
 
 Outputs (into the meeting folder):
@@ -55,11 +55,11 @@ def build_details(manifest, descriptions, vision_model, output_language):
 
 
 def render_digest_md(details):
-    """Markdown of per-slide descriptions, fed to the summary model."""
+    """Markdown of per-slide OCR text, fed to the summary model."""
     lines = []
     for fr in details["frames"]:
         lines.append(f"## {fr['slide']} [{fr['timestamp']}]")
-        lines.append(fr["text"] or "(no meaningful shared content)")
+        lines.append(fr["text"] or "(no readable content)")
         lines.append("")
     return "\n".join(lines).strip() + "\n"
 
@@ -70,7 +70,7 @@ def encode_image(path):
 
 
 def ensure_model(host, model):
-    """Fail fast (with the pull command) if the vision model isn't present."""
+    """Fail fast (with the pull command) if the OCR/vision model isn't present."""
     url = host.rstrip("/") + "/api/tags"
     try:
         with urllib.request.urlopen(url, timeout=10) as resp:
@@ -79,7 +79,7 @@ def ensure_model(host, model):
         sys.exit(f"Ollama unreachable at {host}: {exc}")
     base = model.split(":")[0]
     if not any(n == model or n.split(":")[0] == base for n in names):
-        sys.exit(f"vision model not pulled: {model}\n  run: ollama pull {model}")
+        sys.exit(f"OCR/vision model not pulled: {model}\n  run: ollama pull {model}")
 
 
 def summarize_digest(host, model, digest, lang, options, max_chunk_chars, templates_dir):
@@ -96,7 +96,7 @@ def summarize_digest(host, model, digest, lang, options, max_chunk_chars, templa
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Describe + summarize frames via Ollama.")
+    ap = argparse.ArgumentParser(description="OCR + summarize frames via Ollama.")
     ap.add_argument("--manifest", required=True)
     ap.add_argument("--base-dir", default=None,
                     help="folder image paths are relative to (default: manifest dir)")
@@ -127,7 +127,7 @@ def main():
         frames = manifest.get("frames", [])
         print(f"(frames: {len(frames)})")
         if frames:
-            print("===== DESCRIBE PROMPT (slide-0001) =====")
+            print("===== OCR PROMPT (slide-0001) =====")
             print(fill(describe_tpl, {"__TIMESTAMP__": frames[0]["timestamp"],
                                       "__LANGUAGE__": lang}))
         return
@@ -140,7 +140,7 @@ def main():
         img_path = os.path.join(base_dir, fr["image"])
         if not os.path.isfile(img_path):
             sys.exit(f"frame image missing: {img_path}")
-        sys.stderr.write(f"  describing {fr['slide']} @ {fr['timestamp']}…\n")
+        sys.stderr.write(f"  OCR {fr['slide']} @ {fr['timestamp']}…\n")
         prompt = fill(describe_tpl, {"__TIMESTAMP__": fr["timestamp"], "__LANGUAGE__": lang})
         raw = generate(args.host, args.vision_model, prompt, options=options,
                        images=[encode_image(img_path)])
