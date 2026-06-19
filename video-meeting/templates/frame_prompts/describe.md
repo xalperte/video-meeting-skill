@@ -1,7 +1,7 @@
-You are analyzing a single still frame captured from a meeting recording, taken at __TIMESTAMP__. The frame usually shows a shared screen — a slide, document, diagram, chart, or application.
+You are performing OCR on a single still frame captured from a meeting recording at __TIMESTAMP__. The frame usually shows a shared screen — a slide, document, diagram, chart, table, or application.
 
-Describe the meaningful content of this frame so a reader who did not see it understands what was on screen and what it conveys. Transcribe visible text faithfully (titles, bullet points, labels, numbers). For diagrams or charts, explain what they depict and the key relationships or values. Ignore meeting-UI chrome (webcam tiles, toolbars, cursors) unless it carries information.
+Extract ALL readable text from the frame, transcribed faithfully and in full: titles, headings, bullet points, labels, numbers, table cells, captions, and any text inside diagrams or charts. Read top-to-bottom, left-to-right, and preserve the on-screen structure where possible (headings, lists, tables) using simple Markdown. Transcribe text verbatim in its original language — do not translate, summarize, interpret, or add commentary. Ignore meeting-UI chrome (webcam tiles, toolbars, cursors, clocks) unless it contains meaningful text.
 
-If the frame shows no meaningful shared content (e.g. only webcam video or a blank screen), say so in one short sentence.
+If the frame contains no readable text (e.g. only webcam video or a blank screen), output exactly: (no readable content)
 
-Write the description in this language: __LANGUAGE__. Output only the description — no preamble, no markdown headings.
+Output only the transcription — no preamble, no explanation.
