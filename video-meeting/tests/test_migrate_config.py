@@ -46,7 +46,7 @@ class TestMigrateConfig(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             example = self._write(d, "config.example.yaml",
                 'ollama:\n  host: "http://x"\n  summary_model: "gemma4:12b"\n'
-                '  vision_model: "qwen3-vl:8b"\n'
+                '  vision_model: "chandra-ocr-2"\n'
                 'frames:\n  image_format: "png"\n  describe_max_chars: 4000\n')
             # user customized summary_model AND has a key not in example
             cfg = self._write(d, "config.yaml",
@@ -61,7 +61,7 @@ class TestMigrateConfig(unittest.TestCase):
             self.assertEqual(loaded["ollama"]["max_chunk_chars"], 100000)
             # siblings under ollama NOT wiped, new key inserted
             self.assertEqual(loaded["ollama"]["host"], "http://x")
-            self.assertEqual(loaded["ollama"]["vision_model"], "qwen3-vl:8b")
+            self.assertEqual(loaded["ollama"]["vision_model"], "chandra-ocr-2")
             # new top-level block appended
             self.assertEqual(loaded["frames"]["image_format"], "png")
             self.assertEqual(loaded["frames"]["describe_max_chars"], 4000)

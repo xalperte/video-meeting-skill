@@ -155,7 +155,7 @@ stays separate from meeting summarization, and so `summarize.py`'s
 ```json
 {
   "video": "meeting.mp4",
-  "vision_model": "qwen3-vl:8b",
+  "vision_model": "chandra-ocr-2",
   "output_language": "English",
   "frames": [
     {
@@ -198,7 +198,7 @@ that cannot disturb the existing flow. It is only entered when `--frames` is set
 ```yaml
 ollama:
   summary_max_chunk_chars: 24000          # externalized from summarize.py default
-  vision_model: "qwen3-vl:8b"            # frame description (vision)
+  vision_model: "chandra-ocr-2"            # frame description (vision)
 
 frames:
   image_format: "png"                     # png | jpg
@@ -208,7 +208,7 @@ frames:
 
 install:
   # vision model pulled for the optional frame-description step
-  ollama_models: ["gemma4:12b", "qwen3.5:9b", "qwen3-vl:8b"]
+  ollama_models: ["gemma4:12b", "qwen3.5:9b", "chandra-ocr-2"]
 ```
 
 All read via `get(cfg, "<path>", DEFAULT)` with the DEFAULT equal to the value
@@ -261,7 +261,7 @@ defaults that a new bundle would silently revert.
   # --- added by migrate-config 2026-06-18 (new keys from config.example.yaml) ---
   # ----------------------------------------------------------------------------
   ollama:
-    vision_model: "qwen3-vl:8b"
+    vision_model: "chandra-ocr-2"
   frames:
     image_format: "png"
     ...
@@ -359,7 +359,7 @@ Re-run `bash package.sh video-meeting` after edits to refresh the bundle.
   not merged, switches `migrate_config.py` to a structured in-place insert under
   the existing parent (still append-only in spirit: existing values untouched,
   backup written). Either way, no existing user value is modified.
-- **Vision model choice/size.** `qwen3-vl:8b` is the default; configurable. If a
+- **Vision model choice/size.** `chandra-ocr-2` is the default; configurable. If a
   user's GPU/model set differs, the `/api/tags` preflight names the exact pull.
 - **Frame at/after EOF.** A timestamp past the video duration yields no frame;
   `extract_frames.py` detects the missing output file and errors with the slide

@@ -301,7 +301,7 @@ def main():
                    "--out-details", P("video-frames-details.json"),
                    "--out-summary", P("video-frames-summary.md"),
                    "--host", host,
-                   "--vision-model", get(cfg, "ollama.vision_model", "qwen3-vl:8b"),
+                   "--vision-model", get(cfg, "ollama.vision_model", "chandra-ocr-2"),
                    "--summary-model", get(cfg, "ollama.summary_model", "gemma4:12b"),
                    "--output-language", out_language,
                    "--num-ctx", num_ctx, "--temperature", temp,

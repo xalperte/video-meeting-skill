@@ -103,7 +103,7 @@ def main():
     ap.add_argument("--out-details", required=True)
     ap.add_argument("--out-summary", required=True)
     ap.add_argument("--host", default="http://127.0.0.1:11434")
-    ap.add_argument("--vision-model", default="qwen3-vl:8b")
+    ap.add_argument("--vision-model", default="chandra-ocr-2")
     ap.add_argument("--summary-model", default="gemma4:12b")
     ap.add_argument("--output-language", default="auto")
     ap.add_argument("--num-ctx", type=int, default=65536)

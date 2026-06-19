@@ -293,7 +293,7 @@ phase_ollama() {
   # or the built-in default).
   local vmodel
   vmodel="$(cfg ollama.vision_model 2>/dev/null || true)"
-  [[ -n "$vmodel" ]] || vmodel="qwen3-vl:8b"
+  [[ -n "$vmodel" ]] || vmodel="chandra-ocr-2"
   if ! ollama list 2>/dev/null | grep -q "^${vmodel%%:*}"; then
     log "pulling vision model $vmodel (for --frames)"
     ollama pull "$vmodel" || warn "could not pull $vmodel; --frames will be unavailable"

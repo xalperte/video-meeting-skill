@@ -460,9 +460,9 @@ class TestDescribeHelpers(unittest.TestCase):
         det = D.build_details(self._manifest(),
                               {"slide-0001": "Title slide about Q3 plan",
                                "slide-0002": "Architecture diagram with 3 services"},
-                              vision_model="qwen3-vl:8b", output_language="English")
+                              vision_model="chandra-ocr-2", output_language="English")
         self.assertEqual(det["video"], "meeting.mp4")        # basename only
-        self.assertEqual(det["vision_model"], "qwen3-vl:8b")
+        self.assertEqual(det["vision_model"], "chandra-ocr-2")
         self.assertEqual(len(det["frames"]), 2)
         self.assertEqual(det["frames"][0]["slide"], "slide-0001")
         self.assertEqual(det["frames"][0]["image"], "frames/slide-0001.png")
@@ -604,7 +604,7 @@ def main():
     ap.add_argument("--out-details", required=True)
     ap.add_argument("--out-summary", required=True)
     ap.add_argument("--host", default="http://127.0.0.1:11434")
-    ap.add_argument("--vision-model", default="qwen3-vl:8b")
+    ap.add_argument("--vision-model", default="chandra-ocr-2")
     ap.add_argument("--summary-model", default="gemma4:12b")
     ap.add_argument("--output-language", default="auto")
     ap.add_argument("--num-ctx", type=int, default=65536)
@@ -708,7 +708,7 @@ In `video-meeting/config.example.yaml`, inside the `ollama:` block, after the `t
 ```yaml
   summary_max_chunk_chars: 24000      # map-reduce threshold for summarize.py
                                       # (was a script default; here so it survives upgrades)
-  vision_model: "qwen3-vl:8b"        # local VLM for the optional frame-description step
+  vision_model: "chandra-ocr-2"        # local VLM for the optional frame-description step
 ```
 
 After the `ollama:` block (before `# ---- Speaker recognition`), add a new top-level block:
@@ -725,7 +725,7 @@ frames:
 
 In the `install:` block, change `ollama_models` to include the vision model:
 ```yaml
-  ollama_models: ["gemma4:12b", "qwen3.5:9b", "qwen3-vl:8b"]
+  ollama_models: ["gemma4:12b", "qwen3.5:9b", "chandra-ocr-2"]
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -783,7 +783,7 @@ In `video-meeting/scripts/run.py`, immediately after the `# ---- 7. extract task
                    "--out-details", P("video-frames-details.json"),
                    "--out-summary", P("video-frames-summary.md"),
                    "--host", host,
-                   "--vision-model", get(cfg, "ollama.vision_model", "qwen3-vl:8b"),
+                   "--vision-model", get(cfg, "ollama.vision_model", "chandra-ocr-2"),
                    "--summary-model", get(cfg, "ollama.summary_model", "gemma4:12b"),
                    "--output-language", out_language,
                    "--num-ctx", num_ctx, "--temperature", temp,
@@ -877,7 +877,7 @@ class TestMigrateConfig(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             example = self._write(d, "config.example.yaml",
                 'ollama:\n  host: "http://x"\n  summary_model: "gemma4:12b"\n'
-                '  vision_model: "qwen3-vl:8b"\n'
+                '  vision_model: "chandra-ocr-2"\n'
                 'frames:\n  image_format: "png"\n  describe_max_chars: 4000\n')
             # user customized summary_model AND has a key not in example
             cfg = self._write(d, "config.yaml",
@@ -892,7 +892,7 @@ class TestMigrateConfig(unittest.TestCase):
             self.assertEqual(loaded["ollama"]["max_chunk_chars"], 100000)
             # siblings under ollama NOT wiped, new key inserted
             self.assertEqual(loaded["ollama"]["host"], "http://x")
-            self.assertEqual(loaded["ollama"]["vision_model"], "qwen3-vl:8b")
+            self.assertEqual(loaded["ollama"]["vision_model"], "chandra-ocr-2")
             # new top-level block appended
             self.assertEqual(loaded["frames"]["image_format"], "png")
             self.assertEqual(loaded["frames"]["describe_max_chars"], 4000)
@@ -1228,7 +1228,7 @@ In `phase_ollama`, after the existing `while ... ollama pull "$m" ... done < <(c
   # or the built-in default).
   local vmodel
   vmodel="$(cfg ollama.vision_model 2>/dev/null || true)"
-  [[ -n "$vmodel" ]] || vmodel="qwen3-vl:8b"
+  [[ -n "$vmodel" ]] || vmodel="chandra-ocr-2"
   if ! ollama list 2>/dev/null | grep -q "^${vmodel%%:*}"; then
     log "pulling vision model $vmodel (for --frames)"
     ollama pull "$vmodel" || warn "could not pull $vmodel; --frames will be unavailable"
