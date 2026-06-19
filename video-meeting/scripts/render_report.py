@@ -18,6 +18,7 @@ import sys
 
 from docx import Document
 from docx.shared import Pt
+from docx.oxml.ns import qn  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from templates import load_template_yaml  # noqa: E402
@@ -31,12 +32,55 @@ def fmt_duration(seconds):
     return (f"{h}h {m}m" if h else f"{m}m")
 
 
+def clear_body(doc):
+    """Remove existing body paragraphs and tables, keeping the final sectPr
+    (and thus section setup); headers/footers live outside the body."""
+    body = doc.element.body
+    for child in list(body):
+        if child.tag in (qn("w:p"), qn("w:tbl")):
+            body.remove(child)
+
+
+def add_bullet(doc, text):
+    """Add a bulleted paragraph, degrading gracefully if styles are absent."""
+    have = {s.name for s in doc.styles}
+    if "List Bullet" in have:
+        return doc.add_paragraph(text, style="List Bullet")
+    if "List Paragraph" in have:
+        return doc.add_paragraph(text, style="List Paragraph")
+    return doc.add_paragraph("• " + text)
+
+
+def _apply_grid_borders(table):
+    """Add thin borders to every cell (fallback when Table Grid is absent)."""
+    tbl = table._tbl
+    for cell in tbl.iter_tcs():
+        tcPr = cell.tcPr if cell.tcPr is not None else cell.get_or_add_tcPr()
+        borders = tcPr.find(qn("w:tcBorders"))
+        if borders is None:
+            borders = tcPr.makeelement(qn("w:tcBorders"), {})
+            tcPr.append(borders)
+        for edge in ("top", "left", "bottom", "right"):
+            el = borders.makeelement(qn("w:" + edge), {
+                qn("w:val"): "single", qn("w:sz"): "4", qn("w:color"): "999999"})
+            borders.append(el)
+
+
+def styled_table(doc, rows, cols):
+    """Add a table styled with Table Grid if available, else manual borders."""
+    table = doc.add_table(rows=rows, cols=cols)
+    if "Table Grid" in {s.name for s in doc.styles}:
+        table.style = "Table Grid"
+    else:
+        _apply_grid_borders(table)
+    return table
+
+
 def add_items_table(doc, items):
     if not items:
         doc.add_paragraph("(none)")
         return
-    table = doc.add_table(rows=1, cols=5)
-    table.style = "Table Grid"
+    table = styled_table(doc, 1, 5)
     for c, head in enumerate(["Title", "Assignee", "Priority", "Source", "Conf."]):
         run = table.rows[0].cells[c].paragraphs[0].add_run(head)
         run.bold = True
@@ -70,8 +114,7 @@ def build(doc, record):
     parts = record.get("participants", [])
     if parts:
         doc.add_heading("Participants", level=1)
-        table = doc.add_table(rows=1, cols=3)
-        table.style = "Table Grid"
+        table = styled_table(doc, 1, 3)
         for c, head in enumerate(["Name", "Status", "Confidence"]):
             table.rows[0].cells[c].paragraphs[0].add_run(head).bold = True
         for p in parts:
@@ -93,7 +136,7 @@ def build(doc, record):
         for sec in sections:
             doc.add_heading(sec.get("category", "Notes"), level=2)
             for pt in sec.get("points", []):
-                doc.add_paragraph(pt, style="List Bullet")
+                add_bullet(doc, pt)
 
     # Action items
     items = record.get("action_items", [])
@@ -109,11 +152,11 @@ def build(doc, record):
     if record.get("decisions"):
         doc.add_heading("Decisions", level=1)
         for d in record["decisions"]:
-            doc.add_paragraph(d, style="List Bullet")
+            add_bullet(doc, d)
     if record.get("open_questions"):
         doc.add_heading("Open Questions", level=1)
         for q in record["open_questions"]:
-            doc.add_paragraph(q, style="List Bullet")
+            add_bullet(doc, q)
 
 
 def render(record_path, out_pdf, libreoffice, keep_docx=True, template_dir=None):
@@ -123,6 +166,7 @@ def render(record_path, out_pdf, libreoffice, keep_docx=True, template_dir=None)
     base = os.path.join(template_dir, "report.docx") if template_dir else None
     if base and os.path.isfile(base):
         doc = Document(base)
+        clear_body(doc)
         _load_template_yaml_warn_if_missing_styles(doc, template_dir)
     else:
         doc = Document()
