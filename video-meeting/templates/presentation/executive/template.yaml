@@ -1,11 +1,11 @@
 name: "Executive"
-description: "Navy, serif headings — leadership readouts"
-accent: "1F3864"
+description: "Navy + gold, Cambria headings — corporate executive brand"
+accent: "B08D57"
 slides:
   title_layout: "Title Slide"
   content_layout: "Title and Content"
 xlsx:
-  header_fill: "1F3864"
+  header_fill: "1A2238"
   header_font_color: "FFFFFF"
   explicit_fill: "E2EFDA"
   suggested_fill: "FFF2CC"
